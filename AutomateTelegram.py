@@ -74,7 +74,6 @@ async def send_all(channel_name_src, channel_name_dst):
         messages.reverse()
         for message in messages:
             if (not isinstance(message, MessageService)):
-                #print(message)
                 await client.send_message(channel_dialog_dst.entity, message)
                 time.sleep(4)
 
@@ -84,9 +83,6 @@ async def send_all(channel_name_src, channel_name_dst):
 
 
 async def send_documents(channel_name_src, channel_name_dst):
-    #list_channels = []
-    #await get_dialogs_by_entity_type(list_dialogs=list_channels, entity_type=Channel)
-
     list_dialogs = await client.get_dialogs()
     channel_dialog_src = get_dialog_by_entity_title(
         channel_name_src, 
