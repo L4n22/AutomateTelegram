@@ -3,7 +3,7 @@ from telethon.tl.types import Channel
 from telethon.tl.types import User
 from telethon.tl.types import ChannelParticipant
 from telethon.tl.types import InputMessagesFilterDocument
-from telethon.tl.types import MessageService, MessageEmpty
+from telethon.tl.types import MessageService
 
 import time
 import sys
