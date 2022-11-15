@@ -1,13 +1,15 @@
 from telethon import TelegramClient
 from telethon.tl.types import Channel
-from telethon.tl.types import Chat
 from telethon.tl.types import User
 from telethon.tl.types import ChannelParticipant
 from telethon.tl.types import InputMessagesFilterDocument
-from telethon.tl.types import MessageService
+from telethon.tl.types import MessageService, MessageEmpty
+
 import time
 import sys
 import re
+import random
+import string
 
 #https://my.telegram.org/auth -> API_ID & API_HASH
 #python3.10.exe -m pip install telethon
@@ -52,113 +54,117 @@ async def kick_all_users_channel(channel_name):
                 time.sleep(5)
 
 
-async def send_all(channel_name_src, channel_name_dst):
-    list_dialogs = await client.get_dialogs()
-    channel_dialog_src = get_dialog_by_entity_title(
-        channel_name_src, 
-        list_dialogs
-    )
+def get_files_name(messages):
+    list_files = []
+    list_delete_values = []
+    for i in range(len(messages)):
+        if (isinstance(messages[i], MessageService) \
+            or messages[i].media == None):
+            list_delete_values.append(messages[i])
+            continue
 
-    channel_dialog_dst = get_dialog_by_entity_title(
-        channel_name_dst, 
-        list_dialogs
-    )
-
-    CHANNEL_NOT_FOUND = None
-    if (channel_dialog_src != CHANNEL_NOT_FOUND and \
-        channel_dialog_dst != CHANNEL_NOT_FOUND):
-        messages = await client.get_messages(
-            channel_dialog_src.entity.id, 
-            limit=None)
+        if messages[i].file.name == None:
+            random_string = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
+            list_files.append(random_string)
+            continue
         
-        messages.reverse()
+        list_files.append(messages[i].file.name)
+
+    for value in list_delete_values:
+        messages.remove(value)
+
+    return list_files
+
+
+def get_message_matches(messages):
+    files = get_files_name(messages)
+    messages_final = []
+    message_matches = []
+    filename = files[0]
+    filematch = re.sub(r'\..*', '', filename)
+    for i in range(len(files)):
+        filename = files[i]
+        if (filematch in filename):
+            message_matches.append(messages[i])
+        else:
+            messages_final.append(message_matches)
+            message_matches = []
+            filematch = re.sub(r'\..*', '', filename)
+            message_matches.append(messages[i])
+
+        if (i == len(files) - 1):
+            messages_final.append(message_matches)
+
+    return messages_final
+
+
+async def send_all_messages(entity_dialog_src, entity_dialog_dst):
+    messages_src = await client.get_messages(
+        entity_dialog_src.entity.id, 
+        limit=None)
+    messages_src.reverse()
+    message_matches = get_message_matches(messages_src)
+    for messages in message_matches: 
+        if len(messages) > 1:
+            await client.send_file(entity_dialog_dst.entity, messages)
+            time.sleep(3.5)
+            continue
+        
         for message in messages:
-            if (not isinstance(message, MessageService)):
-                await client.send_message(channel_dialog_dst.entity, message)
-                time.sleep(4)
+            await client.send_message(entity_dialog_dst.entity, message)
+            time.sleep(3.5)
+        
 
-        return True
-
-    return False
-
-
-async def send_documents(channel_name_src, channel_name_dst):
-    list_dialogs = await client.get_dialogs()
-    channel_dialog_src = get_dialog_by_entity_title(
-        channel_name_src, 
-        list_dialogs
+async def send_files(entity_dialog_src, entity_dialog_dst):
+    messages_src = await client.get_messages(
+        entity_dialog_src.entity.id, 
+        filter=InputMessagesFilterDocument, 
+        limit=None
     )
 
-    channel_dialog_dst = get_dialog_by_entity_title(
-        channel_name_dst, 
-        list_dialogs
-    )
-
-    CHANNEL_NOT_FOUND = None
-    if (channel_dialog_src != CHANNEL_NOT_FOUND and \
-        channel_dialog_dst != CHANNEL_NOT_FOUND):
-        messages = await client.get_messages(
-            channel_dialog_src.entity.id, 
-            filter=InputMessagesFilterDocument, 
-            limit=None)
-        
-        files = [message.file.name for message in messages]
-
-        messages_final = []
-        messages_matches = []
-        filematch = re.sub(r'\..*', '', files[0])
-        for i in range(len(files)):
-            filename = files[i]
-            if (filematch in filename):
-                messages_matches.append(messages[i])
-                if (i == len(files) - 1):
-                    messages_final.append(messages_matches)
-            else:
-                messages_final.append(messages_matches)
-                messages_matches = []
-                filematch = re.sub(r'\..*', '', files[i])
-                print(filematch)
-                messages_matches.append(messages[i])
-
-        
-        for messages in messages_final:
-            await client.send_file(channel_dialog_dst.entity, messages)
-            time.sleep(4)
-        
-        return True
-
-
-    return False
+    message_matches = get_message_matches(messages_src)    
+    for messages in message_matches:
+        await client.send_file(entity_dialog_dst.entity, messages)
+        time.sleep(3.5)
 
 
 def help():
     help_command = f"""
     {sys.argv[0]} --src "channel/chat/username" --dst "channel/chat/username"
     """
-
     print(help_command)
 
                 
 async def main():
     argc = len(sys.argv) - 1
-
     if (argc != 4):
         help()
         sys.exit(1)
 
     parameter_src = sys.argv[1]
-    channel_name_src = sys.argv[2]
+    entity_name_src = sys.argv[2]
     parameter_dst = sys.argv[3]
-    channel_name_dst = sys.argv[4]
+    entity_name_dst = sys.argv[4]
+    if (parameter_src == "--src" \
+        and parameter_dst =="--dst"):
+        list_dialogs = await client.get_dialogs()
+        entity_dialog_src = get_dialog_by_entity_title(
+            entity_name_src, 
+            list_dialogs)
+        entity_dialog_dst = get_dialog_by_entity_title(
+            entity_name_dst, 
+            list_dialogs)
+        ENTITY_NOT_FOUND = None
+        if (entity_dialog_src == ENTITY_NOT_FOUND \
+            or entity_dialog_dst == ENTITY_NOT_FOUND):
+            print()
+            print("'" + entity_name_src + "' y/o '" + entity_name_dst + "' not found!")
+            print()
+            sys.exit(1)
 
-    if (parameter_src == "--src" and parameter_dst =="--dst"):
-        success = await send_all(
-            channel_name_src,
-            channel_name_dst
-        )
-
-        if (not success):
-            print("Entity (Chat/Channel/User) not found.")
+        await send_all_messages(
+            entity_dialog_src,
+            entity_dialog_dst)
     else:
         help()
 
