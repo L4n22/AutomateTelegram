@@ -121,7 +121,7 @@ async def send_files(entity_dialog_src, entity_dialog_dst):
         filter=InputMessagesFilterDocument, 
         limit=None
     )
-
+    messages_src.reverse()
     message_matches = get_message_matches(messages_src)    
     for messages in message_matches:
         await client.send_file(entity_dialog_dst.entity, messages)
