@@ -110,7 +110,7 @@ async def send_all_messages(entity_dialog_src, entity_dialog_dst):
         limit=None)
     messages_src.reverse()
     message_matches = get_message_matches(messages_src)
-    """for messages in message_matches: 
+    for messages in message_matches: 
         if len(messages) > 1:
             await client.send_file(entity_dialog_dst.entity, messages)
             time.sleep(3.5)
@@ -118,7 +118,7 @@ async def send_all_messages(entity_dialog_src, entity_dialog_dst):
         
         for message in messages:
             await client.send_message(entity_dialog_dst.entity, message)
-            time.sleep(3.5)"""
+            time.sleep(3.5)
         
 
 async def send_files(entity_dialog_src, entity_dialog_dst):
