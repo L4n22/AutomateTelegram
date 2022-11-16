@@ -4,6 +4,9 @@ from telethon.tl.types import User
 from telethon.tl.types import ChannelParticipant
 from telethon.tl.types import InputMessagesFilterDocument
 from telethon.tl.types import MessageService
+from telethon.tl.types import MessageMediaPhoto
+from telethon.tl.types import MessageMediaWebPage
+from telethon.tl.types import MessageMediaDocument
 
 import time
 import sys
@@ -58,20 +61,23 @@ def get_files_name(messages):
     list_files = []
     list_delete_values = []
     for i in range(len(messages)):
-        if (isinstance(messages[i], MessageService) \
-            or messages[i].media == None):
+        if isinstance(messages[i], MessageService):
             list_delete_values.append(messages[i])
-            continue
 
-        if messages[i].file.name == None:
+        elif isinstance(messages[i].media, MessageMediaPhoto):
             random_string = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
             list_files.append(random_string)
-            continue
-        
-        list_files.append(messages[i].file.name)
+
+        elif isinstance(messages[i].media, MessageMediaWebPage):
+            list_files.append(messages[i].media.webpage.title)      
+
+        elif isinstance(messages[i].media, MessageMediaDocument):
+            list_files.append(messages[i].file.name)
 
     for value in list_delete_values:
         messages.remove(value)
+
+    print(len(list_files))
 
     return list_files
 
@@ -104,7 +110,7 @@ async def send_all_messages(entity_dialog_src, entity_dialog_dst):
         limit=None)
     messages_src.reverse()
     message_matches = get_message_matches(messages_src)
-    for messages in message_matches: 
+    """for messages in message_matches: 
         if len(messages) > 1:
             await client.send_file(entity_dialog_dst.entity, messages)
             time.sleep(3.5)
@@ -112,7 +118,7 @@ async def send_all_messages(entity_dialog_src, entity_dialog_dst):
         
         for message in messages:
             await client.send_message(entity_dialog_dst.entity, message)
-            time.sleep(3.5)
+            time.sleep(3.5)"""
         
 
 async def send_files(entity_dialog_src, entity_dialog_dst):
@@ -121,6 +127,7 @@ async def send_files(entity_dialog_src, entity_dialog_dst):
         filter=InputMessagesFilterDocument, 
         limit=None
     )
+
     messages_src.reverse()
     message_matches = get_message_matches(messages_src)    
     for messages in message_matches:
