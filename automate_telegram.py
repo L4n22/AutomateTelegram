@@ -7,7 +7,6 @@ from telethon.tl.types import MessageService
 from telethon.tl.types import MessageMediaPhoto
 from telethon.tl.types import MessageMediaWebPage
 from telethon.tl.types import MessageMediaDocument
-
 import time
 import sys
 import re
@@ -61,7 +60,9 @@ def get_files_name(messages):
     list_files = []
     list_delete_values = []
     for i in range(len(messages)):
-        if isinstance(messages[i], MessageService):
+        isMessageText = messages[i].media == None
+        if isinstance(messages[i], MessageService) \
+                or isMessageText:
             list_delete_values.append(messages[i])
 
         elif isinstance(messages[i].media, MessageMediaPhoto):
@@ -74,10 +75,9 @@ def get_files_name(messages):
         elif isinstance(messages[i].media, MessageMediaDocument):
             list_files.append(messages[i].file.name)
 
+        
     for value in list_delete_values:
         messages.remove(value)
-
-    print(len(list_files))
 
     return list_files
 
