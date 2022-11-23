@@ -69,7 +69,7 @@ def get_files_name(messages):
 
         elif isinstance(messages[i].media, MessageMediaPhoto):
             random_string = ''.join(random.choices(string.ascii_uppercase + string.digits, k=20))
-            if random_string in list_randoms:
+            while random_string in list_randoms:
                 random_string = ''.join(random.choices(string.ascii_uppercase + string.digits, k=20))
             
             list_randoms.append(random_string)
@@ -90,32 +90,29 @@ def get_files_name(messages):
 
 def get_message_matches(messages):
     files = get_files_name(messages)
-  #  print()
-  #  print(files)
     messages_final = []
     message_matches = []
-    filename = files[0]
-    filematch = re.sub(r'\..*', '', filename)
-    for i in range(len(files)):
-        filename = files[i]
-        if (filematch in filename):
-            message_matches.append(messages[i])
-        else:
-            messages_final.append(message_matches)
-            message_matches = []
-            filematch = re.sub(r'\..*', '', filename)
-            message_matches.append(messages[i])
+    if (len(files) > 0):
+        filename = files[0]
+        filematch = re.sub(r'\..*', '', filename)
+        for i in range(len(files)):
+            filename = files[i]
+            if (filematch in filename):
+                message_matches.append(messages[i])
+            else:
+                messages_final.append(message_matches)
+                message_matches = []
+                filematch = re.sub(r'\..*', '', filename)
+                message_matches.append(messages[i])
 
-        if (i == len(files) - 1):
-            messages_final.append(message_matches)
+            if (i == len(files) - 1):
+                messages_final.append(message_matches)
 
     return messages_final
 
 
 async def send_all_messages(entity_dialog_src, entity_dialog_dst):
-    #00:11:32+00:00
-    from_date = ""
-    #from_date = datetime.datetime.strptime('17-11-2022 00:00:00', '%d-%m-%Y %H:%M:%S')
+    from_date = datetime.datetime.strptime('23-11-2022 00:00:00', '%d-%m-%Y %H:%M:%S')
     messages_src = await client.get_messages(
         entity_dialog_src.entity.id, 
         reverse=True,
@@ -125,13 +122,11 @@ async def send_all_messages(entity_dialog_src, entity_dialog_dst):
     message_matches = get_message_matches(messages_src)
     for messages in message_matches: 
         if len(messages) > 1:
-            #print(messages[0].date)
             await client.send_file(entity_dialog_dst.entity, messages)
             time.sleep(3)
             continue
         
         for message in messages:
-            #print(message.date)
             await client.send_message(entity_dialog_dst.entity, message)
             time.sleep(3)
         
