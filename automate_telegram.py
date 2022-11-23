@@ -12,6 +12,7 @@ import sys
 import re
 import random
 import string
+import datetime
 
 #https://my.telegram.org/auth -> API_ID & API_HASH
 #python3.10.exe -m pip install telethon
@@ -59,6 +60,7 @@ async def kick_all_users_channel(channel_name):
 def get_files_name(messages):
     list_files = []
     list_delete_values = []
+    list_randoms = []
     for i in range(len(messages)):
         isMessageText = messages[i].media == None
         if isinstance(messages[i], MessageService) \
@@ -66,7 +68,11 @@ def get_files_name(messages):
             list_delete_values.append(messages[i])
 
         elif isinstance(messages[i].media, MessageMediaPhoto):
-            random_string = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
+            random_string = ''.join(random.choices(string.ascii_uppercase + string.digits, k=20))
+            if random_string in list_randoms:
+                random_string = ''.join(random.choices(string.ascii_uppercase + string.digits, k=20))
+            
+            list_randoms.append(random_string)
             list_files.append(random_string)
 
         elif isinstance(messages[i].media, MessageMediaWebPage):
@@ -84,6 +90,8 @@ def get_files_name(messages):
 
 def get_message_matches(messages):
     files = get_files_name(messages)
+  #  print()
+  #  print(files)
     messages_final = []
     message_matches = []
     filename = files[0]
@@ -105,20 +113,27 @@ def get_message_matches(messages):
 
 
 async def send_all_messages(entity_dialog_src, entity_dialog_dst):
+    #00:11:32+00:00
+    from_date = ""
+    #from_date = datetime.datetime.strptime('17-11-2022 00:00:00', '%d-%m-%Y %H:%M:%S')
     messages_src = await client.get_messages(
         entity_dialog_src.entity.id, 
+        reverse=True,
+        offset_date=from_date,
         limit=None)
-    messages_src.reverse()
+   # messages_src.reverse()
     message_matches = get_message_matches(messages_src)
     for messages in message_matches: 
         if len(messages) > 1:
+            print(messages[0].date)
             await client.send_file(entity_dialog_dst.entity, messages)
-            time.sleep(3.5)
+            time.sleep(3)
             continue
         
         for message in messages:
+            #print(message.date)
             await client.send_message(entity_dialog_dst.entity, message)
-            time.sleep(3.5)
+            time.sleep(3)
         
 
 async def send_files(entity_dialog_src, entity_dialog_dst):
@@ -132,7 +147,7 @@ async def send_files(entity_dialog_src, entity_dialog_dst):
     message_matches = get_message_matches(messages_src)    
     for messages in message_matches:
         await client.send_file(entity_dialog_dst.entity, messages)
-        time.sleep(3.5)
+        time.sleep(3)
 
 
 def help():
